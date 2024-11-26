@@ -1,0 +1,281 @@
+import bpy
+import csv
+import os
+import requests
+
+# CSV文件路径
+CSV_FILE_PATH = "path/to/your/bone_mapping.csv"
+
+class POSEGEN_BoneMappingItem(bpy.types.PropertyGroup):
+    common_name: bpy.props.StringProperty(name="Common Name", default="")
+    bone_name: bpy.props.StringProperty(name="Bone Name", default="")
+
+class POSEGEN_UL_BoneMappingList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            row = layout.row()
+            row.prop(item, "common_name", text="", emboss=False, icon_value=icon)
+            row.prop(item, "bone_name", text="", emboss=False, icon_value=icon)
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon_value=icon)
+
+class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
+    """Creates a Panel in the Object properties window"""
+    bl_label = "Pose Generator"
+    bl_idname = "POSEGEN_PT_pose_generator"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Pose Generator'
+
+    def draw(self, context):
+        layout = self.layout
+
+        # Skeleton Analysis Work Area
+        box = layout.box()
+        box.label(text="Skeleton Analysis Work Area")
+
+        row = box.row()
+        row.prop(context.scene, "posegen_analysis_object", text="Select Object")
+        row.operator("posegen.analysis", text="Analysis")
+
+        row = box.row()
+        row.template_list("POSEGEN_UL_BoneMappingList", "", context.scene, "posegen_bone_mapping", context.scene, "posegen_bone_mapping_index")
+
+        row = box.row()
+        row.operator("posegen.load_mapping", text="Load Mapping")
+        row.operator("posegen.add_mapping", text="Add Mapping")
+        row.operator("posegen.remove_mapping", text="Remove Mapping").index = context.scene.posegen_bone_mapping_index
+        row.operator("posegen.save_mapping", text="Save Mapping")
+
+        # Generate Pose Work Area
+        box = layout.box()
+        box.label(text="Generate Pose Work Area")
+        
+        row = box.row()
+        row.prop(context.scene, "posegen_prompt", text="Prompt", icon='TEXT')
+        
+        row = box.row()
+        row.operator("posegen.generate_pose", text="Generate Pose")
+
+        # Edit Pose Work Area
+        box = layout.box()
+        box.label(text="Edit Pose Work Area")
+        
+        row = box.row()
+        row.prop(context.scene, "posegen_edit_prompt", text="Prompt", icon='TEXT')
+        
+        row = box.row()
+        row.operator("posegen.edit_pose", text="Edit Pose")
+
+def register():
+    bpy.utils.register_class(POSEGEN_BoneMappingItem)
+    bpy.utils.register_class(POSEGEN_UL_BoneMappingList)
+    
+    bpy.types.Scene.posegen_prompt = bpy.props.StringProperty(
+        name="Generate Prompt",
+        description="Enter the prompt for generating a pose",
+        default="",
+        maxlen=1024,
+    )
+    
+    bpy.types.Scene.posegen_edit_prompt = bpy.props.StringProperty(
+        name="Edit Prompt",
+        description="Enter the prompt for editing a pose",
+        default="",
+        maxlen=1024,
+    )
+    
+    bpy.types.Scene.posegen_analysis_object = bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Analysis Object",
+        description="Select the object for skeleton analysis"
+    )
+    
+    bpy.types.Scene.posegen_bone_mapping = bpy.props.CollectionProperty(
+        type=POSEGEN_BoneMappingItem
+    )
+    
+    bpy.types.Scene.posegen_bone_mapping_index = bpy.props.IntProperty(name="Index for bone mapping list", default=0)
+    
+    bpy.utils.register_class(POSEGEN_PT_PoseGeneratorPanel)
+    
+    # Register operators
+    bpy.utils.register_class(POSEGEN_OT_GeneratePose)
+    bpy.utils.register_class(POSEGEN_OT_EditPose)
+    bpy.utils.register_class(POSEGEN_OT_Analysis)
+    bpy.utils.register_class(POSEGEN_OT_AddMapping)
+    bpy.utils.register_class(POSEGEN_OT_RemoveMapping)
+    bpy.utils.register_class(POSEGEN_OT_SaveMapping)
+    bpy.utils.register_class(POSEGEN_OT_LoadMapping)
+
+    # Load bone mapping from CSV file
+    load_bone_mapping_from_csv()
+
+def unregister():
+    del bpy.types.Scene.posegen_prompt
+    del bpy.types.Scene.posegen_edit_prompt
+    del bpy.types.Scene.posegen_analysis_object
+    del bpy.types.Scene.posegen_bone_mapping
+    del bpy.types.Scene.posegen_bone_mapping_index
+    
+    bpy.utils.unregister_class(POSEGEN_PT_PoseGeneratorPanel)
+    
+    # Unregister operators
+    bpy.utils.unregister_class(POSEGEN_OT_GeneratePose)
+    bpy.utils.unregister_class(POSEGEN_OT_EditPose)
+    bpy.utils.unregister_class(POSEGEN_OT_Analysis)
+    bpy.utils.unregister_class(POSEGEN_OT_AddMapping)
+    bpy.utils.unregister_class(POSEGEN_OT_RemoveMapping)
+    bpy.utils.unregister_class(POSEGEN_OT_SaveMapping)
+    bpy.utils.unregister_class(POSEGEN_OT_LoadMapping)
+
+    bpy.utils.unregister_class(POSEGEN_BoneMappingItem)
+    bpy.utils.unregister_class(POSEGEN_UL_BoneMappingList)
+
+class POSEGEN_OT_GeneratePose(bpy.types.Operator):
+    """Generate a new pose based on the prompt"""
+    bl_idname = "posegen.generate_pose"
+    bl_label = "Generate Pose"
+
+    def execute(self, context):
+        prompt = context.scene.posegen_prompt
+        self.report({'INFO'}, f"Generating pose with prompt: {prompt}")
+        # Add your pose generation logic here
+        return {'FINISHED'}
+
+class POSEGEN_OT_EditPose(bpy.types.Operator):
+    """Edit an existing pose based on the prompt"""
+    bl_idname = "posegen.edit_pose"
+    bl_label = "Edit Pose"
+
+    def execute(self, context):
+        prompt = context.scene.posegen_edit_prompt
+        self.report({'INFO'}, f"Editing pose with prompt: {prompt}")
+        # Add your pose editing logic here
+        return {'FINISHED'}
+
+class POSEGEN_OT_Analysis(bpy.types.Operator):
+    """Analyze the selected object's skeleton"""
+    bl_idname = "posegen.analysis"
+    bl_label = "Analysis"
+
+    def execute(self, context):
+        obj = context.scene.posegen_analysis_object
+        if obj and obj.type == 'ARMATURE':
+            self.report({'INFO'}, f"Analyzing skeleton of object: {obj.name}")
+            
+            # Get all bone names
+            bone_names = [bone.name for bone in obj.data.bones]
+            
+            # Send request to server
+            try:
+                response = requests.post('http://127.0.0.1:5000/analyze_skeleton', json={'bone_names': bone_names})
+                response.raise_for_status()
+                csv_text = response.text
+                
+                # Parse CSV text and add to bone mapping
+                bone_mapping = context.scene.posegen_bone_mapping
+                bone_mapping.clear()
+                
+                reader = csv.reader(csv_text.splitlines())
+                for row in reader:
+                    if len(row) == 2:
+                        item = bone_mapping.add()
+                        item.common_name = row[0]
+                        item.bone_name = row[1]
+                
+                self.report({'INFO'}, "Bone mapping loaded from server")
+            except requests.RequestException as e:
+                self.report({'ERROR'}, f"Error communicating with server: {e}")
+        else:
+            self.report({'WARNING'}, "Please select an armature object")
+        return {'FINISHED'}
+
+class POSEGEN_OT_AddMapping(bpy.types.Operator):
+    """Add a new bone mapping item"""
+    bl_idname = "posegen.add_mapping"
+    bl_label = "Add Mapping"
+
+    def execute(self, context):
+        item = context.scene.posegen_bone_mapping.add()
+        item.common_name = "New Common Name"
+        item.bone_name = "New Bone Name"
+        context.scene.posegen_bone_mapping_index = len(context.scene.posegen_bone_mapping) - 1
+        return {'FINISHED'}
+
+class POSEGEN_OT_RemoveMapping(bpy.types.Operator):
+    """Remove a bone mapping item"""
+    bl_idname = "posegen.remove_mapping"
+    bl_label = "Remove Mapping"
+
+    index: bpy.props.IntProperty()
+
+    def execute(self, context):
+        context.scene.posegen_bone_mapping.remove(self.index)
+        context.scene.posegen_bone_mapping_index = min(max(0, self.index - 1), len(context.scene.posegen_bone_mapping) - 1)
+        return {'FINISHED'}
+
+class POSEGEN_OT_SaveMapping(bpy.types.Operator):
+    """Save bone mapping to CSV file"""
+    bl_idname = "posegen.save_mapping"
+    bl_label = "Save Mapping"
+
+    def execute(self, context):
+        bone_mapping = context.scene.posegen_bone_mapping
+        with open(CSV_FILE_PATH, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            for mapping in bone_mapping:
+                writer.writerow([mapping.common_name, mapping.bone_name])
+        self.report({'INFO'}, f"Bone mapping saved to {CSV_FILE_PATH}")
+        return {'FINISHED'}
+
+class POSEGEN_OT_LoadMapping(bpy.types.Operator):
+    """Load bone mapping from a CSV file"""
+    bl_idname = "posegen.load_mapping"
+    bl_label = "Load Mapping"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        if not os.path.exists(self.filepath):
+            self.report({'ERROR'}, "File does not exist")
+            return {'CANCELLED'}
+
+        bone_mapping = context.scene.posegen_bone_mapping
+        bone_mapping.clear()
+
+        with open(self.filepath, mode='r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if len(row) == 2:
+                    item = bone_mapping.add()
+                    item.common_name = row[0]
+                    item.bone_name = row[1]
+
+        self.report({'INFO'}, f"Bone mapping loaded from {self.filepath}")
+        return {'FINISHED'}
+
+def load_bone_mapping_from_csv():
+    if not os.path.exists(CSV_FILE_PATH):
+        return
+
+    context = bpy.context
+    bone_mapping = context.scene.posegen_bone_mapping
+    bone_mapping.clear()
+
+    with open(CSV_FILE_PATH, mode='r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if len(row) == 2:
+                item = bone_mapping.add()
+                item.common_name = row[0]
+                item.bone_name = row[1]
+
+if __name__ == "__main__":
+    register()
