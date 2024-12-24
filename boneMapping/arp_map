@@ -1,0 +1,5 @@
+left_hand,c_hand_ik.l
+right_hand,c_hand_ik.r
+left_foot,c_foot_ik.l
+right_foot,c_foot_ik.r
+hip,c_root_maxter.x
