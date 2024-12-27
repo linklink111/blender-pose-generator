@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # 创建文件处理器
-LOG_FILE_PATH = f"run/logs/log_{datetime.now().strftime('%Y%m%d%H%M%S')}.log"
+LOG_FILE_PATH = f"E:/000CCCProject/ChatPoseBlender/blender-pose-generator/run/logs/log_{datetime.now().strftime('%Y%m%d%H%M%S')}.log"
 file_handler = logging.FileHandler(LOG_FILE_PATH)
 file_handler.setLevel(logging.INFO)
 
@@ -37,6 +37,20 @@ print(f"Log file created at: {LOG_FILE_PATH}")
 # 插件启动时输出“start running”
 logger.info("Start running")
 
+# 定义一个枚举属性，用于控制选项卡的选择
+def update_page(self, context):
+    pass
+
+bpy.types.Scene.page_selection = bpy.props.EnumProperty(
+    name="Page",
+    items=[
+        ('ANALYSIS', "Analysis", "Skeleton Analysis Work Area"),
+        ('GENERATE', "Generate", "Generate Pose Work Area"),
+        ('EDIT', "Edit", "Edit Pose Work Area"),
+    ],
+    default='ANALYSIS',
+    update=update_page
+)
 
 class POSEGEN_BoneMappingItem(bpy.types.PropertyGroup):
     common_name: bpy.props.StringProperty(name="Common Name", default="")
@@ -62,46 +76,55 @@ class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        scene = context.scene
 
-        # Skeleton Analysis Work Area
-        box = layout.box()
-        box.label(text="Skeleton Analysis Work Area")
+        # 创建选项卡
+        row = layout.row()
+        row.prop(scene, "page_selection", expand=True)
 
-        row = box.row()
-        row.prop(context.scene, "posegen_analysis_object", text="Select Object")
-        row.operator("posegen.analysis", text="Analysis")
+        # 根据选中的选项卡显示不同的内容
+        if scene.page_selection == 'ANALYSIS':
+            # Skeleton Analysis Work Area
+            box = layout.box()
+            box.label(text="Skeleton Analysis Work Area")
 
-        row = box.row()
-        row.template_list("POSEGEN_UL_BoneMappingList", "", context.scene, "posegen_bone_mapping", context.scene, "posegen_bone_mapping_index")
+            row = box.row()
+            row.prop(context.scene, "posegen_analysis_object", text="Select Object")
+            row.operator("posegen.analysis", text="Analysis")
 
-        row = box.row()
-        row.operator("posegen.load_mapping", text="Load Mapping")
-        row.operator("posegen.add_mapping", text="Add Mapping")
-        row.operator("posegen.remove_mapping", text="Remove Mapping").index = context.scene.posegen_bone_mapping_index
-        row.operator("posegen.save_mapping", text="Save Mapping")
+            row = box.row()
+            row.template_list("POSEGEN_UL_BoneMappingList", "", context.scene, "posegen_bone_mapping", context.scene, "posegen_bone_mapping_index")
 
-        # Generate Pose Work Area
-        box = layout.box()
-        box.label(text="Generate Pose Work Area")
-        
-        row = box.row()
-        row.operator("posegen.clear_pose", text="Clear Pose")  # Add this line
+            row = box.row()
+            row.operator("posegen.load_mapping", text="Load Mapping")
+            row.operator("posegen.add_mapping", text="Add Mapping")
+            row.operator("posegen.remove_mapping", text="Remove Mapping").index = context.scene.posegen_bone_mapping_index
+            row.operator("posegen.save_mapping", text="Save Mapping")
 
-        row = box.row()
-        row.prop(context.scene, "posegen_prompt", text="Prompt", icon='TEXT')
-        
-        row = box.row()
-        row.operator("posegen.generate_pose", text="Generate Pose")
+        elif scene.page_selection == 'GENERATE':
+            # Generate Pose Work Area
+            box = layout.box()
+            box.label(text="Generate Pose Work Area")
+            
+            row = box.row()
+            row.operator("posegen.clear_pose", text="Clear Pose")  # Add this line
 
-        # Edit Pose Work Area
-        box = layout.box()
-        box.label(text="Edit Pose Work Area")
-        
-        row = box.row()
-        row.prop(context.scene, "posegen_edit_prompt", text="Prompt", icon='TEXT')
-        
-        row = box.row()
-        row.operator("posegen.edit_pose", text="Edit Pose")
+            row = box.row()
+            row.prop(context.scene, "posegen_prompt", text="Prompt", icon='TEXT')
+            
+            row = box.row()
+            row.operator("posegen.generate_pose", text="Generate Pose")
+
+        elif scene.page_selection == 'EDIT':
+            # Edit Pose Work Area
+            box = layout.box()
+            box.label(text="Edit Pose Work Area")
+            
+            row = box.row()
+            row.prop(context.scene, "posegen_edit_prompt", text="Prompt", icon='TEXT')
+            
+            row = box.row()
+            row.operator("posegen.edit_pose", text="Edit Pose")
 
 def register():
     bpy.utils.register_class(POSEGEN_BoneMappingItem)
@@ -169,7 +192,6 @@ def unregister():
 
     bpy.utils.unregister_class(POSEGEN_BoneMappingItem)
     bpy.utils.unregister_class(POSEGEN_UL_BoneMappingList)
-
 
 class POSEGEN_OT_GeneratePose(bpy.types.Operator):
     """Generate a new pose based on the prompt"""
