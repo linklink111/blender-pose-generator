@@ -2,7 +2,7 @@ left_hand,c_hand_ik.l
 right_hand,c_hand_ik.r
 left_foot,c_foot_ik.l
 right_foot,c_foot_ik.r
-hip,c_root_maxter.x
+hip,c_root_master.x
 left_elbow,c_arms_pole.l
 right_elbow,c_arms_pole.r
 left_knee,c_leg_pole.l

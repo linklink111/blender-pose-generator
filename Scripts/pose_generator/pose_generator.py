@@ -108,6 +108,8 @@ class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
             
             row = box.row()
             row.operator("posegen.clear_pose", text="Clear Pose")  # Add this line
+            row = box.row()
+            row.operator("posegen.clear_animation", text="Clear Animation")  # 添加 Clear Animation 按钮
 
             row = box.row()
             row.prop(context.scene, "posegen_prompt", text="Prompt", icon='TEXT')
@@ -167,6 +169,7 @@ def register():
     bpy.utils.register_class(POSEGEN_OT_SaveMapping)
     bpy.utils.register_class(POSEGEN_OT_LoadMapping)
     bpy.utils.register_class(POSEGEN_OT_ClearPose)  # Add this line
+    bpy.utils.register_class(POSEGEN_OT_ClearAnimation)  # 注册新的操作符
 
     # Load bone mapping from CSV file
     load_bone_mapping_from_csv()
@@ -189,6 +192,7 @@ def unregister():
     bpy.utils.unregister_class(POSEGEN_OT_SaveMapping)
     bpy.utils.unregister_class(POSEGEN_OT_LoadMapping)
     bpy.utils.unregister_class(POSEGEN_OT_ClearPose)  # Add this line
+    bpy.utils.unregister_class(POSEGEN_OT_ClearAnimation)  # 取消注册
 
     bpy.utils.unregister_class(POSEGEN_BoneMappingItem)
     bpy.utils.unregister_class(POSEGEN_UL_BoneMappingList)
@@ -398,6 +402,27 @@ class POSEGEN_OT_LoadMapping(bpy.types.Operator):
 
         logging.info(f"Bone mapping loaded from {self.filepath}")
         self.report({'INFO'}, f"Bone mapping loaded from {self.filepath}")
+        return {'FINISHED'}
+    
+class POSEGEN_OT_ClearAnimation(bpy.types.Operator):
+    """Clear all animations from the selected object"""
+    bl_idname = "posegen.clear_animation"
+    bl_label = "Clear Animation"
+
+    def execute(self, context):
+        obj = context.scene.posegen_analysis_object
+        if obj:
+            # Clear animation data if it exists
+            if obj.animation_data:
+                obj.animation_data_clear()
+                logging.info(f"Animation data cleared for object: {obj.name}")
+                self.report({'INFO'}, f"Animation data cleared for object: {obj.name}")
+            else:
+                logging.warning(f"No animation data found for object: {obj.name}")
+                self.report({'WARNING'}, f"No animation data found for object: {obj.name}")
+        else:
+            logging.warning("Please select an object")
+            self.report({'WARNING'}, "Please select an object")
         return {'FINISHED'}
 
 def load_bone_mapping_from_csv():

@@ -1,0 +1,286 @@
+Timing Information=======================================:
+Loading bone mapping took 0.0000 seconds
+Generating pose description took 3.3112 seconds
+Generating pose code sequence took 15.4475 seconds
+Checking bone directions took 18.0479 seconds
+Inserting bone mapping header took 19.0714 seconds
+Converting bone operations to world coordinates took 21.8060 seconds
+
+Pose Description=======================================:
+0.0s: 站立姿势，双手自然垂在身体两侧；
+0.5s: 左脚向前迈出一步，重心稍向前移；
+1.0s: 左臂弯曲，手掌向内，手臂抬起至与肩膀平齐的高度；
+1.5s: 左臂快速向前甩动，手掌拍向目标（假设目标在正前方）；
+2.0s: 左臂继续向前伸展，手掌保持拍击的动作；
+2.5s: 左臂开始收回，手掌逐渐转向身体；
+3.0s: 回到初始的站立姿势，双手垂下。
+
+Pose Code=======================================:
+# 设置帧速率
+frame_rate = 24  # 每秒 24 帧
+
+# 初始站立姿势
+frame_start = 0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)  # 左手自然垂下
+hand_r.location = (0.0, 0.5, 0.0)  # 右手自然垂下
+hand_l.keyframe_insert(data_path="location", frame=frame_start)
+hand_r.keyframe_insert(data_path="location", frame=frame_start)
+
+# 0.5s: 左脚向前迈出一步
+frame_0_5 = 0.5 * frame_rate
+foot_l.location.x -= 0.3  # 左脚向前迈出
+hip.location.x -= 0.1  # 身体重心稍向前移
+foot_l.keyframe_insert(data_path="location", frame=frame_0_5)
+hip.keyframe_insert(data_path="location", frame=frame_0_5)
+
+# 1.0s: 左臂弯曲，抬起至肩膀高度
+frame_1 = 1.0 * frame_rate
+hand_l.location.z += 0.8  # 左臂抬起
+hand_l.rotation_euler = (0.0, 0.0, -0.5)  # 弯曲手臂，手掌向内
+hand_l.keyframe_insert(data_path="location", frame=frame_1)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1)
+
+# 1.5s: 左臂快速向前甩动
+frame_1_5 = 1.5 * frame_rate
+hand_l.location.x -= 0.5  # 左臂向前甩动
+hand_l.rotation_euler = (0.0, 0.0, -1.0)  # 增加旋转，模拟拍击动作
+hand_l.keyframe_insert(data_path="location", frame=frame_1_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1_5)
+
+# 2.0s: 左臂继续向前伸展
+frame_2 = 2.0 * frame_rate
+hand_l.location.x -= 0.2  # 继续向前伸展
+hand_l.keyframe_insert(data_path="location", frame=frame_2)
+
+# 2.5s: 左臂开始收回
+frame_2_5 = 2.5 * frame_rate
+hand_l.location.x += 0.3  # 左臂收回
+hand_l.rotation_euler = (0.0, 0.0, -0.3)  # 逐渐转向身体
+hand_l.keyframe_insert(data_path="location", frame=frame_2_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_2_5)
+
+# 3.0s: 回到初始站立姿势
+frame_3 = 3.0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)  # 左手回到初始位置
+hand_l.keyframe_insert(data_path="location", frame=frame_3)
+
+# 确保其他身体部位保持初始姿势
+foot_r.keyframe_insert(data_path="location", frame=frame_3)
+knee_l.keyframe_insert(data_path="location", frame=frame_3)
+knee_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="rotation_euler", frame=frame_3)
+
+Pose Code Check Direction=======================================:
+```python
+# 设置帧速率
+frame_rate = 24  # 每秒 24 帧
+
+# 初始站立姿势
+frame_start = 0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)  # 左手自然垂下
+hand_r.location = (0.0, 0.5, 0.0)  # 右手自然垂下
+hand_l.keyframe_insert(data_path="location", frame=frame_start)
+hand_r.keyframe_insert(data_path="location", frame=frame_start)
+
+# 0.5s: 左脚向前迈出一步
+frame_0_5 = 0.5 * frame_rate
+foot_l.location.y += 0.3  # 左脚向前迈出
+hip.location.y += 0.1  # 身体重心稍向前移
+foot_l.keyframe_insert(data_path="location", frame=frame_0_5)
+hip.keyframe_insert(data_path="location", frame=frame_0_5)
+
+# 1.0s: 左臂弯曲，抬起至肩膀高度
+frame_1 = 1.0 * frame_rate
+hand_l.location.z += 0.8  # 左臂抬起
+hand_l.rotation_euler = (0.0, 0.0, -0.5)  # 弯曲手臂，手掌向内
+hand_l.keyframe_insert(data_path="location", frame=frame_1)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1)
+
+# 1.5s: 左臂快速向前甩动
+frame_1_5 = 1.5 * frame_rate
+hand_l.location.y -= 0.5  # 左臂向前甩动
+hand_l.rotation_euler = (0.0, 0.0, -1.0)  # 增加旋转，模拟拍击动作
+hand_l.keyframe_insert(data_path="location", frame=frame_1_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1_5)
+
+# 2.0s: 左臂继续向前伸展
+frame_2 = 2.0 * frame_rate
+hand_l.location.y -= 0.2  # 继续向前伸展
+hand_l.keyframe_insert(data_path="location", frame=frame_2)
+
+# 2.5s: 左臂开始收回
+frame_2_5 = 2.5 * frame_rate
+hand_l.location.y += 0.3  # 左臂收回
+hand_l.rotation_euler = (0.0, 0.0, -0.3)  # 逐渐转向身体
+hand_l.keyframe_insert(data_path="location", frame=frame_2_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_2_5)
+
+# 3.0s: 回到初始站立姿势
+frame_3 = 3.0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)  # 左手回到初始位置
+hand_l.keyframe_insert(data_path="location", frame=frame_3)
+
+# 确保其他身体部位保持初始姿势
+foot_r.keyframe_insert(data_path="location", frame=frame_3)
+knee_l.keyframe_insert(data_path="location", frame=frame_3)
+knee_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="rotation_euler", frame=frame_3)
+```
+
+Pose Code with Header=======================================:
+```python
+import bpy
+# 获取骨骼对象
+armature = bpy.data.objects['rig']  # 替换为你的骨骼名称，如果用户没有给出则不变
+bpy.context.view_layer.objects.active = armature
+
+hand_l = armature.pose.bones['c_hand_ik.l']
+hand_r = armature.pose.bones['c_hand_ik.r']
+foot_l = armature.pose.bones['c_foot_ik.l']
+foot_r = armature.pose.bones['c_foot_ik.r']
+hip = armature.pose.bones['c_root_master.x']
+
+# 设置帧速率
+frame_rate = 24  # 每秒 24 帧
+
+# 初始站立姿势
+frame_start = 0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)  # 左手自然垂下
+hand_r.location = (0.0, 0.5, 0.0)  # 右手自然垂下
+hand_l.keyframe_insert(data_path="location", frame=frame_start)
+hand_r.keyframe_insert(data_path="location", frame=frame_start)
+
+# 0.5s: 左脚向前迈出一步
+frame_0_5 = 0.5 * frame_rate
+foot_l.location.y += 0.3  # 左脚向前迈出
+hip.location.y += 0.1  # 身体重心稍向前移
+foot_l.keyframe_insert(data_path="location", frame=frame_0_5)
+hip.keyframe_insert(data_path="location", frame=frame_0_5)
+
+# 1.0s: 左臂弯曲，抬起至肩膀高度
+frame_1 = 1.0 * frame_rate
+hand_l.location.z += 0.8  # 左臂抬起
+hand_l.rotation_euler = (0.0, 0.0, -0.5)  # 弯曲手臂，手掌向内
+hand_l.keyframe_insert(data_path="location", frame=frame_1)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1)
+
+# 1.5s: 左臂快速向前甩动
+frame_1_5 = 1.5 * frame_rate
+hand_l.location.y -= 0.5  # 左臂向前甩动
+hand_l.rotation_euler = (0.0, 0.0, -1.0)  # 增加旋转，模拟拍击动作
+hand_l.keyframe_insert(data_path="location", frame=frame_1_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1_5)
+
+# 2.0s: 左臂继续向前伸展
+frame_2 = 2.0 * frame_rate
+hand_l.location.y -= 0.2  # 继续向前伸展
+hand_l.keyframe_insert(data_path="location", frame=frame_2)
+
+# 2.5s: 左臂开始收回
+frame_2_5 = 2.5 * frame_rate
+hand_l.location.y += 0.3  # 左臂收回
+hand_l.rotation_euler = (0.0, 0.0, -0.3)  # 逐渐转向身体
+hand_l.keyframe_insert(data_path="location", frame=frame_2_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_2_5)
+
+# 3.0s: 回到初始站立姿势
+frame_3 = 3.0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)  # 左手回到初始位置
+hand_l.keyframe_insert(data_path="location", frame=frame_3)
+
+# 确保其他身体部位保持初始姿势
+foot_r.keyframe_insert(data_path="location", frame=frame_3)
+knee_l.keyframe_insert(data_path="location", frame=frame_3)
+knee_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="rotation_euler", frame=frame_3)
+```
+
+Pose Code converted to world coord=======================================:
+```python
+import bpy
+from mathutils import Vector, Matrix
+
+# 获取骨骼对象
+armature = bpy.data.objects['rig']
+bpy.context.view_layer.objects.active = armature
+
+hand_l = armature.pose.bones['c_hand_ik.l']
+hand_r = armature.pose.bones['c_hand_ik.r']
+foot_l = armature.pose.bones['c_foot_ik.l']
+foot_r = armature.pose.bones['c_foot_ik.r']
+hip = armature.pose.bones['c_root_master.x']
+
+# 设置帧速率
+frame_rate = 24
+
+# 初始站立姿势
+frame_start = 0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)
+hand_r.location = (0.0, 0.5, 0.0)
+hand_l.keyframe_insert(data_path="location", frame=frame_start)
+hand_r.keyframe_insert(data_path="location", frame=frame_start)
+
+# 0.5s: 左脚向前迈出一步
+frame_0_5 = 0.5 * frame_rate
+world_matrix = (armature.matrix_world @ (foot_l.parent.matrix if foot_l.parent else Matrix())).inverted()
+foot_l.location += world_matrix @ Vector((0, 0.3, 0))  # 左脚向前迈出
+hip.location += world_matrix @ Vector((0, 0.1, 0))  # 身体重心稍向前移
+foot_l.keyframe_insert(data_path="location", frame=frame_0_5)
+hip.keyframe_insert(data_path="location", frame=frame_0_5)
+
+# 1.0s: 左臂弯曲，抬起至肩膀高度
+frame_1 = 1.0 * frame_rate
+world_matrix = (armature.matrix_world @ (hand_l.parent.matrix if hand_l.parent else Matrix())).inverted()
+hand_l.location += world_matrix @ Vector((0, 0, 0.8))  # 左臂抬起
+hand_l.rotation_euler = (0.0, 0.0, -0.5)
+hand_l.keyframe_insert(data_path="location", frame=frame_1)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1)
+
+# 1.5s: 左臂快速向前甩动
+frame_1_5 = 1.5 * frame_rate
+world_matrix = (armature.matrix_world @ (hand_l.parent.matrix if hand_l.parent else Matrix())).inverted()
+hand_l.location += world_matrix @ Vector((0, -0.5, 0))  # 左臂向前甩动
+hand_l.rotation_euler = (0.0, 0.0, -1.0)
+hand_l.keyframe_insert(data_path="location", frame=frame_1_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_1_5)
+
+# 2.0s: 左臂继续向前伸展
+frame_2 = 2.0 * frame_rate
+world_matrix = (armature.matrix_world @ (hand_l.parent.matrix if hand_l.parent else Matrix())).inverted()
+hand_l.location += world_matrix @ Vector((0, -0.2, 0))  # 继续向前伸展
+hand_l.keyframe_insert(data_path="location", frame=frame_2)
+
+# 2.5s: 左臂开始收回
+frame_2_5 = 2.5 * frame_rate
+world_matrix = (armature.matrix_world @ (hand_l.parent.matrix if hand_l.parent else Matrix())).inverted()
+hand_l.location += world_matrix @ Vector((0, 0.3, 0))  # 左臂收回
+hand_l.rotation_euler = (0.0, 0.0, -0.3)
+hand_l.keyframe_insert(data_path="location", frame=frame_2_5)
+hand_l.keyframe_insert(data_path="rotation_euler", frame=frame_2_5)
+
+# 3.0s: 回到初始站立姿势
+frame_3 = 3.0 * frame_rate
+hand_l.location = (0.0, -0.5, 0.0)
+hand_l.keyframe_insert(data_path="location", frame=frame_3)
+
+# 确保其他身体部位保持初始姿势
+foot_r.keyframe_insert(data_path="location", frame=frame_3)
+knee_l.keyframe_insert(data_path="location", frame=frame_3)
+knee_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="location", frame=frame_3)
+elbow_r.keyframe_insert(data_path="rotation_euler", frame=frame_3)
+```
+
+
+Timing Information=======================================:
+Loading bone mapping took 0.0000 seconds
+Generating pose description took 3.3112 seconds
+Generating pose code sequence took 15.4475 seconds
+Checking bone directions took 18.0479 seconds
+Inserting bone mapping header took 19.0714 seconds
+Converting bone operations to world coordinates took 21.8060 seconds
+Writing output to file took 0.0000 seconds
+Total execution time: 77.6861 seconds

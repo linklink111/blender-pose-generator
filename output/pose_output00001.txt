@@ -1,0 +1,122 @@
+Timing_Info=======================================:
+Loading bone mapping took 0.0010 seconds
+Generating pose description took 3.1384 seconds
+Adjusting pose description took 2.5988 seconds
+Generating pose code sequence took 1.8710 seconds
+Checking bone directions took 6.2152 seconds
+Inserting bone mapping header took 0.0000 seconds
+Converting to world coordinates took 0.0000 seconds
+
+Pose_Description=======================================:
+0.0s: 站立姿势，双手自然垂在身体两侧。
+0.5s: 左脚向前迈出一步，重心稍微前倾。
+1.0s: 左臂弯曲，手掌向内，手肘抬起，靠近肩膀。
+1.5s: 左臂迅速向前伸直，手掌拍向目标（假设目标在正前方）。
+2.0s: 左臂继续向前伸展，手掌完全打开，完成拍击动作。
+2.5s: 左臂开始收回，手掌向内弯曲。
+3.0s: 回到初始站立姿势，双手垂下，重心恢复平衡。
+
+Pose_Code=======================================:
+
+
+
+
+
+
+
+
+
+Pose_Code_Check_Direction=======================================:
+direction_text = "前方是+y，后方是-y，左边是-x，右边是+x，上方是+z，下方是-z。"
+
+# 以下是一个简单的站立姿势
+
+# 0.5s: 人物面向+y方向，向右迈出一步
+frame_0_5 = 0.5 * frame_rate
+right_foot.location.x += 0.3  # 向右迈出
+right_foot.keyframe_insert(data_path="location", frame=frame_0_5)
+
+# 1s: 人物向左转身，同时向后退一步
+frame_1 = 1 * frame_rate
+hip.rotation_euler.y -= 90  # 向左转身
+hip.location.y += 0.2  # 向后退一步
+hip.keyframe_insert(data_path="rotation_euler", frame=frame_1)
+hip.keyframe_insert(data_path="location", frame=frame_1)
+
+# 1.5s: 人物向上抬头，同时左脚向左跨出
+frame_1_5 = 1.5 * frame_rate
+head.rotation_euler.x += 45  # 抬头
+left_foot.location.x -= 0.2  # 向左跨出
+head.keyframe_insert(data_path="rotation_euler", frame=frame_1_5)
+left_foot.keyframe_insert(data_path="location", frame=frame_1_5)
+
+Pose_Code_with_Header=======================================:
+import bpy
+# 获取骨骼对象
+armature = bpy.data.objects['rig']  # 替换为你的骨骼名称
+bpy.context.view_layer.objects.active = armature
+left_foot = armature.pose.bones['c_foot_ik.l']
+right_foot = armature.pose.bones['c_foot_ik.r']
+hip = armature.pose.bones['c_root_master.x']
+
+direction_text = "前方是+y，后方是-y，左边是-x，右边是+x，上方是+z，下方是-z。"
+
+# 以下是一个简单的站立姿势
+
+# 0.5s: 人物面向+y方向，向右迈出一步
+frame_0_5 = 0.5 * frame_rate
+right_foot.location.x += 0.3  # 向右迈出
+right_foot.keyframe_insert(data_path="location", frame=frame_0_5)
+
+# 1s: 人物向左转身，同时向后退一步
+frame_1 = 1 * frame_rate
+hip.rotation_euler.y -= 90  # 向左转身
+hip.location.y += 0.2  # 向后退一步
+hip.keyframe_insert(data_path="rotation_euler", frame=frame_1)
+hip.keyframe_insert(data_path="location", frame=frame_1)
+
+# 1.5s: 人物向上抬头，同时左脚向左跨出
+frame_1_5 = 1.5 * frame_rate
+head.rotation_euler.x += 45  # 抬头
+left_foot.location.x -= 0.2  # 向左跨出
+head.keyframe_insert(data_path="rotation_euler", frame=frame_1_5)
+left_foot.keyframe_insert(data_path="location", frame=frame_1_5)
+
+Pose_Code_Converted_to_World_Coord=======================================:
+import bpy
+from mathutils import Vector, Matrix
+
+# 确保代码基于世界坐标方向进行增量操作
+import bpy
+# 获取骨骼对象
+armature = bpy.data.objects['rig']  # 替换为你的骨骼名称
+bpy.context.view_layer.objects.active = armature
+left_foot = armature.pose.bones['c_foot_ik.l']
+right_foot = armature.pose.bones['c_foot_ik.r']
+hip = armature.pose.bones['c_root_master.x']
+
+direction_text = "前方是+y，后方是-y，左边是-x，右边是+x，上方是+z，下方是-z。"
+
+# 以下是一个简单的站立姿势
+
+# 0.5s: 人物面向+y方向，向右迈出一步
+frame_0_5 = 0.5 * frame_rate
+right_foot.location += (armature.matrix_world @ (right_foot.parent.matrix if right_foot.parent else Matrix())).inverted() @ Vector(+Vector((1, 0, 0)) * 0.3)  # 向右迈出
+right_foot.keyframe_insert(data_path="location", frame=frame_0_5)
+
+# 1s: 人物向左转身，同时向后退一步
+frame_1 = 1 * frame_rate
+hip.rotation_euler.y -= 90  # 向左转身
+hip.location += (armature.matrix_world @ (hip.parent.matrix if hip.parent else Matrix())).inverted() @ Vector(+Vector((0, 1, 0)) * 0.2)  # 向后退一步
+hip.keyframe_insert(data_path="rotation_euler", frame=frame_1)
+hip.keyframe_insert(data_path="location", frame=frame_1)
+
+# 1.5s: 人物向上抬头，同时左脚向左跨出
+frame_1_5 = 1.5 * frame_rate
+head.rotation_euler.x += 45  # 抬头
+left_foot.location -= (armature.matrix_world @ (left_foot.parent.matrix if left_foot.parent else Matrix())).inverted() @ Vector(-Vector((1, 0, 0)) * 0.2)  # 向左跨出
+head.keyframe_insert(data_path="rotation_euler", frame=frame_1_5)
+left_foot.keyframe_insert(data_path="location", frame=frame_1_5)
+
+Timing Information=======================================:
+Total execution time: 13.8253 seconds
