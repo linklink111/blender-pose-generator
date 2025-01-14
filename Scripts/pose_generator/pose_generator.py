@@ -1,6 +1,7 @@
 import bpy
 import csv
 import os
+import json
 import requests
 import logging
 from datetime import datetime
@@ -116,6 +117,29 @@ class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
             
             row = box.row()
             row.operator("posegen.generate_pose", text="Generate Pose")
+            
+            
+            
+            # Pose Design 结果列表
+            box = layout.box()
+            box.label(text="Pose Design Results")
+            
+            row = box.row()
+            row.template_list("POSEGEN_UL_PoseDesignList", "", context.scene, "posegen_pose_design_items", context.scene, "posegen_pose_design_index")
+            
+            # 添加 Pose Design 按钮
+            row = box.row()
+            row.operator("posegen.design_pose", text="Pose Design")
+            
+            # Add / Remove buttons for Pose Design
+            row = box.row()
+            row.operator("posegen.add_pose_design", text="Add Pose Design")
+            row.operator("posegen.remove_pose_design", text="Remove Pose Design")
+            
+            # Generate All / Generate Selected buttons
+            row = box.row()
+            row.operator("posegen.generate_all_poses", text="Generate All")
+            row.operator("posegen.generate_selected_pose", text="Generate Selected")
 
         elif scene.page_selection == 'EDIT':
             # Edit Pose Work Area
@@ -162,6 +186,13 @@ def register():
     
     # Register operators
     bpy.utils.register_class(POSEGEN_OT_GeneratePose)
+    bpy.utils.register_class(POSEGEN_OT_DesignPose)
+    bpy.utils.register_class(POSEGEN_PoseDesignItem)
+    bpy.utils.register_class(POSEGEN_UL_PoseDesignList)
+    bpy.utils.register_class(POSEGEN_OT_AddPoseDesign)
+    bpy.utils.register_class(POSEGEN_OT_RemovePoseDesign)
+    bpy.utils.register_class(POSEGEN_OT_GenerateAllPoseDesigns)
+    bpy.utils.register_class(POSEGEN_OT_GenerateSelectedPoseDesign)
     bpy.utils.register_class(POSEGEN_OT_EditPose)
     bpy.utils.register_class(POSEGEN_OT_Analysis)
     bpy.utils.register_class(POSEGEN_OT_AddMapping)
@@ -170,6 +201,9 @@ def register():
     bpy.utils.register_class(POSEGEN_OT_LoadMapping)
     bpy.utils.register_class(POSEGEN_OT_ClearPose)  # Add this line
     bpy.utils.register_class(POSEGEN_OT_ClearAnimation)  # 注册新的操作符
+    
+    bpy.types.Scene.posegen_pose_design_items = bpy.props.CollectionProperty(type=POSEGEN_PoseDesignItem)
+    bpy.types.Scene.posegen_pose_design_index = bpy.props.IntProperty(name="Index for pose design list", default=0)
 
     # Load bone mapping from CSV file
     load_bone_mapping_from_csv()
@@ -185,6 +219,13 @@ def unregister():
     
     # Unregister operators
     bpy.utils.unregister_class(POSEGEN_OT_GeneratePose)
+    bpy.utils.unregister_class(POSEGEN_OT_DesignPose)
+    bpy.utils.unregister_class(POSEGEN_PoseDesignItem)
+    bpy.utils.unregister_class(POSEGEN_UL_PoseDesignList)
+    bpy.utils.unregister_class(POSEGEN_OT_AddPoseDesign)
+    bpy.utils.unregister_class(POSEGEN_OT_RemovePoseDesign)
+    bpy.utils.unregister_class(POSEGEN_OT_GenerateAllPoseDesigns)
+    bpy.utils.unregister_class(POSEGEN_OT_GenerateSelectedPoseDesign)
     bpy.utils.unregister_class(POSEGEN_OT_EditPose)
     bpy.utils.unregister_class(POSEGEN_OT_Analysis)
     bpy.utils.unregister_class(POSEGEN_OT_AddMapping)
@@ -196,6 +237,8 @@ def unregister():
 
     bpy.utils.unregister_class(POSEGEN_BoneMappingItem)
     bpy.utils.unregister_class(POSEGEN_UL_BoneMappingList)
+
+
 
 class POSEGEN_OT_GeneratePose(bpy.types.Operator):
     """Generate a new pose based on the prompt"""
@@ -237,6 +280,182 @@ class POSEGEN_OT_GeneratePose(bpy.types.Operator):
             self.report({'WARNING'}, "Please select an armature object")
 
         return {'FINISHED'}
+
+class POSEGEN_PoseDesignItem(bpy.types.PropertyGroup):
+    time: bpy.props.FloatProperty(name="Time", description="Time in seconds", default=0.0)
+    description: bpy.props.StringProperty(name="Description", description="Description of the pose at this time", default="")
+
+class POSEGEN_UL_PoseDesignList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # Displaying the time and description
+        row = layout.row()
+        row.prop(item, "time", text="Time", emboss=False)
+        row.prop(item, "description", text="Description", emboss=False)
+
+class POSEGEN_OT_AddPoseDesign(bpy.types.Operator):
+    """Add a new pose design item"""
+    bl_idname = "posegen.add_pose_design"
+    bl_label = "Add Pose Design"
+
+    def execute(self, context):
+        item = context.scene.posegen_pose_design_items.add()
+        item.time = 0.0
+        item.description = "New Pose"
+        context.scene.posegen_pose_design_index = len(context.scene.posegen_pose_design_items) - 1
+        logging.info("Added new pose design item")
+        return {'FINISHED'}
+
+class POSEGEN_OT_RemovePoseDesign(bpy.types.Operator):
+    """Remove a pose design item"""
+    bl_idname = "posegen.remove_pose_design"
+    bl_label = "Remove Pose Design"
+
+    index: bpy.props.IntProperty()
+
+    def execute(self, context):
+        context.scene.posegen_pose_design_items.remove(self.index)
+        context.scene.posegen_pose_design_index = min(max(0, self.index - 1), len(context.scene.posegen_pose_design_items) - 1)
+        logging.info(f"Removed pose design item at index {self.index}")
+        return {'FINISHED'}
+
+class POSEGEN_OT_GenerateAllPoseDesigns(bpy.types.Operator):
+    """Generate all poses in the Pose Design list"""
+    bl_idname = "posegen.generate_all_poses"
+    bl_label = "Generate All"
+
+    def execute(self, context):
+        # 遍历 Pose Design 列表中的所有条目并生成相应的动作
+        pose_designs = context.scene.posegen_pose_design_items
+        for item in pose_designs:
+            logging.info(f"Generating pose at {item.time}s: {item.description}")
+            # 你可以在这里添加生成每个姿势的具体逻辑
+        self.report({'INFO'}, "Generated all poses")
+        return {'FINISHED'}
+
+class POSEGEN_OT_GenerateSelectedPoseDesign(bpy.types.Operator):
+    """Generate selected pose in the Pose Design list"""
+    bl_idname = "posegen.generate_selected_pose"
+    bl_label = "Generate Selected"
+
+    def execute(self, context):
+        # 获取当前选中的 Pose Design 条目
+        selected_index = context.scene.posegen_pose_design_index
+        pose_design_items = context.scene.posegen_pose_design_items
+
+        if selected_index < 0 or selected_index >= len(pose_design_items):
+            self.report({'WARNING'}, "No pose selected!")
+            return {'CANCELLED'}
+
+        selected_item = pose_design_items[selected_index]
+        logging.info(f"Generating selected pose for: {selected_item.description}")
+
+        # 获取骨骼世界坐标
+        armature_name = "Armature"  # 替换为你的实际骨架名称
+        bone_mapping = {
+            "left_hand": "c_hand_ik.l",
+            "right_hand": "c_hand_ik.r",
+            "left_foot": "c_foot_ik.l",
+            "right_foot": "c_foot_ik.r",
+            "hip": "c_root_master.x",
+            "left_elbow": "c_arms_pole.l",
+            "right_elbow": "c_arms_pole.r",
+            "left_knee": "c_leg_pole.l",
+            "right_knee": "c_leg_pole.r",
+            "head": "c_head.x"
+        }
+
+        try:
+            bone_world_positions = get_bone_world_positions(armature_name, bone_mapping)
+            if bone_world_positions is None:
+                self.report({'ERROR'}, "Failed to retrieve bone world positions.")
+                return {'CANCELLED'}
+
+            # 构建请求数据
+            data = {
+                "time": selected_item.time,
+                "pose": selected_item.description,
+                "body_world_pos": bone_world_positions  # 添加骨骼世界坐标数据
+            }
+
+            # 发送请求到服务器
+            url = f"http://{HOST_NAME}:{PORT}/api/post_generate_pose_code"
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+
+            # 获取返回的代码
+            response_data = response.json()
+            pose_code = response_data.get("code")
+
+            if not pose_code:
+                self.report({'ERROR'}, "Server did not return any code.")
+                return {'CANCELLED'}
+
+            # 在 Blender 的脚本编辑器中运行代码
+            exec(pose_code, {"bpy": bpy})
+            self.report({'INFO'}, "Pose generated and executed successfully.")
+            logging.info("Pose script executed successfully.")
+
+        except requests.RequestException as e:
+            logging.error(f"Error communicating with server: {e}")
+            self.report({'ERROR'}, f"Error communicating with server: {e}")
+        except Exception as e:
+            logging.error(f"Error executing pose script: {e}")
+            self.report({'ERROR'}, f"Error executing pose script: {e}")
+
+        return {'FINISHED'}
+
+
+
+# 新增操作符 Pose Design
+class POSEGEN_OT_DesignPose(bpy.types.Operator):
+    """Design a new pose based on user input"""
+    bl_idname = "posegen.design_pose"
+    bl_label = "Design Pose"
+
+    def execute(self, context):
+        # 获取输入框的文本内容
+        prompt = context.scene.posegen_prompt
+
+        if not prompt.strip():
+            self.report({'ERROR'}, "Prompt cannot be empty!")
+            return {'CANCELLED'}
+
+        # API 的 URL 和参数
+        url = "http://127.0.0.1:5000/api/post_generate_pose_design"
+        data = {"user_prompt": prompt}
+        
+        try:
+            # 发送 POST 请求
+            response = requests.post(url, json=data)
+            response_data = response.json()
+
+            if response.status_code == 201 and response_data.get("status") == "success":
+                # 解析返回的数据
+                pose_list = json.loads(response_data["data"])
+
+                print(pose_list)
+                
+                # 清空现有的 Pose Design List
+                context.scene.posegen_pose_design_items.clear()
+
+                # 将解析后的数据添加到列表中
+                for pose in pose_list:
+                    new_item = context.scene.posegen_pose_design_items.add()
+                    new_item.time = pose["time"]
+                    new_item.description = pose["pose"]
+
+                # 显示成功消息
+                self.report({'INFO'}, response_data.get("message", "Pose design generated successfully."))
+                return {'FINISHED'}
+            else:
+                # API 错误处理
+                self.report({'ERROR'}, f"API Error: {response_data.get('message', 'Unknown error')}")
+                return {'CANCELLED'}
+
+        except Exception as e:
+            # 请求失败时的错误处理
+            self.report({'ERROR'}, f"Request failed: {str(e)}")
+            return {'CANCELLED'}
     
 class POSEGEN_OT_ClearPose(bpy.types.Operator):
     """Clear the current pose"""
@@ -443,6 +662,34 @@ def load_bone_mapping_from_csv():
                 item.bone_name = row[1]
 
     logging.info(f"Bone mapping loaded from {CSV_FILE_PATH}")
+
+def get_bone_world_positions(armature_name, bone_mapping):
+    """
+    获取指定骨骼的世界位置。
+    :param armature_name: 骨架对象名称
+    :param bone_mapping: 骨骼名称映射
+    :return: 一个字典，键为bone_mapping的key，值为世界坐标
+    """
+    world_positions = {}
+
+    # 获取骨架对象
+    armature = bpy.data.objects.get(armature_name)
+    if not armature or armature.type != 'ARMATURE':
+        print(f"Armature '{armature_name}' not found or is not an ARMATURE.")
+        return None
+
+    # 遍历骨骼映射
+    for key, bone_name in bone_mapping.items():
+        if bone_name in armature.pose.bones:
+            bone = armature.pose.bones[bone_name]
+            # 计算骨骼的世界位置
+            bone_world_matrix = armature.matrix_world @ bone.matrix
+            world_position = bone_world_matrix.translation
+            world_positions[key] = world_position
+        else:
+            print(f"Bone '{bone_name}' not found in armature '{armature_name}'.")
+
+    return world_positions
 
 if __name__ == "__main__":
     register()
