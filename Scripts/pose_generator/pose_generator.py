@@ -1,4 +1,5 @@
 import bpy
+from mathutils import Vector
 import csv
 import os
 import json
@@ -141,6 +142,17 @@ class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
             row.operator("posegen.generate_all_poses", text="Generate All")
             row.operator("posegen.generate_selected_pose", text="Generate Selected")
 
+            # Add Detect All and Detect Selected buttons
+            row = box.row()
+            row.operator("posegen.detect_all", text="Detect All")
+            row.operator("posegen.detect_selected", text="Detect Selected")
+            # Add Refine All and Refine Selected buttons
+            row = box.row()
+            row.operator("posegen.refine_all", text="Refine All")
+            row.operator("posegen.refine_selected", text="Refine Selected")
+
+
+
         elif scene.page_selection == 'EDIT':
             # Edit Pose Work Area
             box = layout.box()
@@ -201,6 +213,10 @@ def register():
     bpy.utils.register_class(POSEGEN_OT_LoadMapping)
     bpy.utils.register_class(POSEGEN_OT_ClearPose)  # Add this line
     bpy.utils.register_class(POSEGEN_OT_ClearAnimation)  # 注册新的操作符
+    bpy.utils.register_class(POSEGEN_OT_DetectAll)
+    bpy.utils.register_class(POSEGEN_OT_DetectSelected)
+    bpy.utils.register_class(POSEGEN_OT_RefineAll)
+    bpy.utils.register_class(POSEGEN_OT_RefineSelected)
     
     bpy.types.Scene.posegen_pose_design_items = bpy.props.CollectionProperty(type=POSEGEN_PoseDesignItem)
     bpy.types.Scene.posegen_pose_design_index = bpy.props.IntProperty(name="Index for pose design list", default=0)
@@ -234,6 +250,10 @@ def unregister():
     bpy.utils.unregister_class(POSEGEN_OT_LoadMapping)
     bpy.utils.unregister_class(POSEGEN_OT_ClearPose)  # Add this line
     bpy.utils.unregister_class(POSEGEN_OT_ClearAnimation)  # 取消注册
+    bpy.utils.unregister_class(POSEGEN_OT_DetectAll)
+    bpy.utils.unregister_class(POSEGEN_OT_DetectSelected)
+    bpy.utils.unregister_class(POSEGEN_OT_RefineAll)
+    bpy.utils.unregister_class(POSEGEN_OT_RefineSelected)
 
     bpy.utils.unregister_class(POSEGEN_BoneMappingItem)
     bpy.utils.unregister_class(POSEGEN_UL_BoneMappingList)
@@ -350,7 +370,7 @@ class POSEGEN_OT_GenerateSelectedPoseDesign(bpy.types.Operator):
         logging.info(f"Generating selected pose for: {selected_item.description}")
 
         # 获取骨骼世界坐标
-        armature_name = "Armature"  # 替换为你的实际骨架名称
+        armature_name = "rig"  # 替换为你的实际骨架名称
         bone_mapping = {
             "left_hand": "c_hand_ik.l",
             "right_hand": "c_hand_ik.r",
@@ -365,7 +385,8 @@ class POSEGEN_OT_GenerateSelectedPoseDesign(bpy.types.Operator):
         }
 
         try:
-            bone_world_positions = get_bone_world_positions(armature_name, bone_mapping)
+            bone_world_positions = get_bone_world_positions(armature_name, bone_mapping, int(selected_item.time*24))
+            print(bone_world_positions)
             if bone_world_positions is None:
                 self.report({'ERROR'}, "Failed to retrieve bone world positions.")
                 return {'CANCELLED'}
@@ -373,7 +394,7 @@ class POSEGEN_OT_GenerateSelectedPoseDesign(bpy.types.Operator):
             # 构建请求数据
             data = {
                 "time": selected_item.time,
-                "pose": selected_item.description,
+                "pose_description": selected_item.description,
                 "body_world_pos": bone_world_positions  # 添加骨骼世界坐标数据
             }
 
@@ -384,7 +405,8 @@ class POSEGEN_OT_GenerateSelectedPoseDesign(bpy.types.Operator):
 
             # 获取返回的代码
             response_data = response.json()
-            pose_code = response_data.get("code")
+            pose_code = response_data.get("data")
+            print(pose_code)
 
             if not pose_code:
                 self.report({'ERROR'}, "Server did not return any code.")
@@ -644,6 +666,45 @@ class POSEGEN_OT_ClearAnimation(bpy.types.Operator):
             self.report({'WARNING'}, "Please select an object")
         return {'FINISHED'}
 
+class POSEGEN_OT_DetectAll(bpy.types.Operator):
+    bl_idname = "posegen.detect_all"
+    bl_label = "Detect All"
+    bl_description = "Detect anomalies in all poses"
+
+    def execute(self, context):
+        # 在这里添加检测所有姿势的逻辑
+        self.report({'INFO'}, "Detect All executed")
+        return {'FINISHED'}
+
+class POSEGEN_OT_DetectSelected(bpy.types.Operator):
+    bl_idname = "posegen.detect_selected"
+    bl_label = "Detect Selected"
+    bl_description = "Detect anomalies in selected poses"
+
+    def execute(self, context):
+        # 在这里添加检测选定姿势的逻辑
+        self.report({'INFO'}, "Detect Selected executed")
+        return {'FINISHED'}
+
+class POSEGEN_OT_RefineAll(bpy.types.Operator):
+    bl_idname = "posegen.refine_all"
+    bl_label = "Refine All"
+    bl_description = "Refine all poses"
+
+    def execute(self, context):
+        # 在这里添加精炼所有姿势的逻辑
+        self.report({'INFO'}, "Refine All executed")
+        return {'FINISHED'}
+
+class POSEGEN_OT_RefineSelected(bpy.types.Operator):
+    bl_idname = "posegen.refine_selected"
+    bl_label = "Refine Selected"
+    bl_description = "Refine selected poses"
+
+    def execute(self, context):
+        # 在这里添加精炼选定姿势的逻辑
+        self.report({'INFO'}, "Refine Selected executed")
+        return {'FINISHED'}
 def load_bone_mapping_from_csv():
     if not os.path.exists(CSV_FILE_PATH):
         logging.warning("CSV file does not exist")
@@ -663,33 +724,37 @@ def load_bone_mapping_from_csv():
 
     logging.info(f"Bone mapping loaded from {CSV_FILE_PATH}")
 
-def get_bone_world_positions(armature_name, bone_mapping):
-    """
-    获取指定骨骼的世界位置。
-    :param armature_name: 骨架对象名称
-    :param bone_mapping: 骨骼名称映射
-    :return: 一个字典，键为bone_mapping的key，值为世界坐标
-    """
-    world_positions = {}
-
-    # 获取骨架对象
-    armature = bpy.data.objects.get(armature_name)
-    if not armature or armature.type != 'ARMATURE':
-        print(f"Armature '{armature_name}' not found or is not an ARMATURE.")
+def get_bone_world_positions(armature_name, bone_mapping, frame):
+    obj = bpy.data.objects.get(armature_name)
+    if obj is None or obj.type != 'ARMATURE':
         return None
 
-    # 遍历骨骼映射
+    bone_world_positions = {}
+    
     for key, bone_name in bone_mapping.items():
-        if bone_name in armature.pose.bones:
-            bone = armature.pose.bones[bone_name]
-            # 计算骨骼的世界位置
-            bone_world_matrix = armature.matrix_world @ bone.matrix
-            world_position = bone_world_matrix.translation
-            world_positions[key] = world_position
-        else:
-            print(f"Bone '{bone_name}' not found in armature '{armature_name}'.")
+        pose_bone = obj.pose.bones.get(bone_name)
+        if not pose_bone:
+            continue
 
-    return world_positions
+        bone_world_pos = Vector((0.0, 0.0, 0.0))
+        has_data = False
+
+        for fcurve in obj.animation_data.action.fcurves:
+            data_path = fcurve.data_path
+            if data_path.startswith(f'pose.bones["{bone_name}"].location'):
+                index = fcurve.array_index
+                bone_world_pos[index] = fcurve.evaluate(frame)
+                has_data = True
+
+        if has_data:
+            # 将局部坐标转换为世界坐标
+            local_matrix = pose_bone.matrix_basis.copy()
+            local_matrix.translation = bone_world_pos
+            world_matrix = obj.matrix_world @ pose_bone.bone.matrix_local @ local_matrix
+            bone_world_positions[key] = list(world_matrix.translation)
+
+    return bone_world_positions
+
 
 if __name__ == "__main__":
     register()
