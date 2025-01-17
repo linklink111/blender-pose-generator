@@ -381,7 +381,10 @@ class POSEGEN_OT_GenerateSelectedPoseDesign(bpy.types.Operator):
             "right_elbow": "c_arms_pole.r",
             "left_knee": "c_leg_pole.l",
             "right_knee": "c_leg_pole.r",
-            "head": "c_head.x"
+            "head": "c_head.x",
+            "chest": "c_spine_02.x",
+            "waist": "c_spine_01.x",
+            "neck" :"c_neck.x"
         }
 
         try:
@@ -724,13 +727,14 @@ def load_bone_mapping_from_csv():
 
     logging.info(f"Bone mapping loaded from {CSV_FILE_PATH}")
 
+
 def get_bone_world_positions(armature_name, bone_mapping, frame):
     obj = bpy.data.objects.get(armature_name)
     if obj is None or obj.type != 'ARMATURE':
         return None
 
     bone_world_positions = {}
-    
+
     for key, bone_name in bone_mapping.items():
         pose_bone = obj.pose.bones.get(bone_name)
         if not pose_bone:
@@ -739,22 +743,27 @@ def get_bone_world_positions(armature_name, bone_mapping, frame):
         bone_world_pos = Vector((0.0, 0.0, 0.0))
         has_data = False
 
-        for fcurve in obj.animation_data.action.fcurves:
-            data_path = fcurve.data_path
-            if data_path.startswith(f'pose.bones["{bone_name}"].location'):
-                index = fcurve.array_index
-                bone_world_pos[index] = fcurve.evaluate(frame)
-                has_data = True
+        if obj.animation_data and obj.animation_data.action:
+            for fcurve in obj.animation_data.action.fcurves:
+                data_path = fcurve.data_path
+                if data_path.startswith(f'pose.bones["{bone_name}"].location'):
+                    index = fcurve.array_index
+                    bone_world_pos[index] = fcurve.evaluate(frame)
+                    has_data = True
 
-        if has_data:
-            # 将局部坐标转换为世界坐标
-            local_matrix = pose_bone.matrix_basis.copy()
-            local_matrix.translation = bone_world_pos
-            world_matrix = obj.matrix_world @ pose_bone.bone.matrix_local @ local_matrix
-            bone_world_positions[key] = list(world_matrix.translation)
+        if not has_data:
+            # 如果没有fcurve数据，直接获取世界坐标
+            bone_world_pos = pose_bone.location
+
+        # 将局部坐标转换为世界坐标
+        local_matrix = pose_bone.matrix_basis.copy()
+        local_matrix.translation = bone_world_pos
+        world_matrix = obj.matrix_world @ pose_bone.bone.matrix_local @ local_matrix
+        bone_world_positions[key] = [round(coord, 2) for coord in world_matrix.translation]
+
+        print(f"Bone {key}: {bone_world_positions[key]}")
 
     return bone_world_positions
-
 
 if __name__ == "__main__":
     register()
