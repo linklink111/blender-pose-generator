@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # 创建文件处理器
-LOG_FILE_PATH = f"E:/000CCCProject/ChatPoseBlender/blender-pose-generator/run/logs/log_{datetime.now().strftime('%Y%m%d%H%M%S')}.log"
+LOG_FILE_PATH = f"log_{datetime.now().strftime('%Y%m%d%H%M%S')}.log"
 file_handler = logging.FileHandler(LOG_FILE_PATH)
 file_handler.setLevel(logging.INFO)
 
