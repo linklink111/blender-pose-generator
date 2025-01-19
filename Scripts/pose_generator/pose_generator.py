@@ -115,10 +115,14 @@ class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
 
             row = box.row()
             row.prop(context.scene, "posegen_prompt", text="Prompt", icon='TEXT')
-            
+            # 添加 Plan Generation 按钮
             row = box.row()
-            row.operator("posegen.generate_pose", text="Generate Pose")
-            
+            row.operator("posegen.plan_generation", text="Plan Generation")
+            # row = box.row()
+            # row.operator("posegen.generate_pose", text="Generate Pose")
+            # 添加 Pose Design 按钮
+            row = box.row()
+            row.operator("posegen.design_pose", text="Pose Design")
             
             
             # Pose Design 结果列表
@@ -128,9 +132,8 @@ class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
             row = box.row()
             row.template_list("POSEGEN_UL_PoseDesignList", "", context.scene, "posegen_pose_design_items", context.scene, "posegen_pose_design_index")
             
-            # 添加 Pose Design 按钮
-            row = box.row()
-            row.operator("posegen.design_pose", text="Pose Design")
+
+            
             
             # Add / Remove buttons for Pose Design
             row = box.row()
@@ -197,6 +200,7 @@ def register():
     bpy.utils.register_class(POSEGEN_PT_PoseGeneratorPanel)
     
     # Register operators
+    bpy.utils.register_class(POSEGEN_OT_PlanGeneration)
     bpy.utils.register_class(POSEGEN_OT_GeneratePose)
     bpy.utils.register_class(POSEGEN_OT_DesignPose)
     bpy.utils.register_class(POSEGEN_PoseDesignItem)
@@ -234,6 +238,7 @@ def unregister():
     bpy.utils.unregister_class(POSEGEN_PT_PoseGeneratorPanel)
     
     # Unregister operators
+    bpy.utils.unregister_class(POSEGEN_OT_PlanGeneration)
     bpy.utils.unregister_class(POSEGEN_OT_GeneratePose)
     bpy.utils.unregister_class(POSEGEN_OT_DesignPose)
     bpy.utils.unregister_class(POSEGEN_PoseDesignItem)
@@ -258,7 +263,15 @@ def unregister():
     bpy.utils.unregister_class(POSEGEN_BoneMappingItem)
     bpy.utils.unregister_class(POSEGEN_UL_BoneMappingList)
 
+class POSEGEN_OT_PlanGeneration(bpy.types.Operator):
+    bl_idname = "posegen.plan_generation"
+    bl_label = "Plan Generation"
+    bl_description = "Generate a plan for pose design"
 
+    def execute(self, context):
+        # 在这里添加生成计划的逻辑
+        self.report({'INFO'}, "Plan Generation executed")
+        return {'FINISHED'}
 
 class POSEGEN_OT_GeneratePose(bpy.types.Operator):
     """Generate a new pose based on the prompt"""
