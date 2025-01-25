@@ -139,6 +139,7 @@ class POSEGEN_PT_PoseGeneratorPanel(bpy.types.Panel):
             row = box.row()
             row.operator("posegen.add_pose_design", text="Add Pose Design")
             row.operator("posegen.remove_pose_design", text="Remove Pose Design")
+            row.operator("posegen.import_pose_design", text="Import Pose Design")
             
             # Generate All / Generate Selected buttons
             row = box.row()
@@ -221,6 +222,7 @@ def register():
     bpy.utils.register_class(POSEGEN_OT_DetectSelected)
     bpy.utils.register_class(POSEGEN_OT_RefineAll)
     bpy.utils.register_class(POSEGEN_OT_RefineSelected)
+    bpy.utils.register_class(POSEGEN_OT_ImportPoseDesign)
     
     bpy.types.Scene.posegen_pose_design_items = bpy.props.CollectionProperty(type=POSEGEN_PoseDesignItem)
     bpy.types.Scene.posegen_pose_design_index = bpy.props.IntProperty(name="Index for pose design list", default=0)
@@ -262,6 +264,7 @@ def unregister():
 
     bpy.utils.unregister_class(POSEGEN_BoneMappingItem)
     bpy.utils.unregister_class(POSEGEN_UL_BoneMappingList)
+    bpy.utils.unregister_class(POSEGEN_OT_ImportPoseDesign)
 
 class POSEGEN_OT_PlanGeneration(bpy.types.Operator):
     bl_idname = "posegen.plan_generation"
@@ -350,6 +353,40 @@ class POSEGEN_OT_RemovePoseDesign(bpy.types.Operator):
         context.scene.posegen_pose_design_index = min(max(0, self.index - 1), len(context.scene.posegen_pose_design_items) - 1)
         logging.info(f"Removed pose design item at index {self.index}")
         return {'FINISHED'}
+
+class POSEGEN_OT_ImportPoseDesign(bpy.types.Operator):
+    """Import Pose Design from JSON"""
+    bl_idname = "posegen.import_pose_design"
+    bl_label = "Import Pose Design"
+
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+
+    def execute(self, context):
+        try:
+            # Open and parse the JSON file
+            with open(self.filepath, 'r') as file:
+                data = json.load(file)
+            
+            # Clear existing items
+            pose_design_items = context.scene.posegen_pose_design_items
+            pose_design_items.clear()
+
+            # Populate items with imported data
+            for pose in data.get("poses", []):
+                item = pose_design_items.add()
+                item.time = pose.get("time", 0.0)
+                item.description = pose.get("description", "New Pose")
+
+            logging.info(f"Successfully imported {len(data.get('poses', []))} pose designs.")
+            return {'FINISHED'}
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed to import pose design: {str(e)}")
+            logging.error(f"Error importing pose design: {str(e)}")
+            return {'CANCELLED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
 class POSEGEN_OT_GenerateAllPoseDesigns(bpy.types.Operator):
     """Generate all poses in the Pose Design list"""

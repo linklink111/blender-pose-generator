@@ -1,0 +1,34 @@
+motion prompt:
+A person plays the violin
+
+plan generation:
+{
+    "scheme": "Decompose into Key Poses",
+    "reason": "Playing the violin involves intricate and varied movements of the arms, wrists, and fingers, while the rest of the body maintains a relatively stable posture. To accurately capture the motion, it is best to decompose it into key poses, focusing on the changing positions of the limbs and the subtle shifts in body posture.",
+    "choice": 1
+}
+
+plan transform for whole body:
+[
+    {"time":"0.0s","body transform":"The person stands upright, holding the violin and bow in preparation for playing"},   
+    {"time":"1.0s","body transform":"They lift the violin to their shoulder, positioning it under the chin with a slight tilt to the left"},
+    {"time":"2.0s","body transform":"The person extends their left arm forward and to the left, holding the violin in a playing position"},
+    {"time":"2.5s","body transform":"They draw the bow across the strings with a smooth, continuous motion, creating a fluid movement in the right arm"},
+    {"time":"3.0s","body transform":"The body maintains the playing posture, with slight adjustments for comfort and expression while playing the violin"},
+    {"time":"4.0s","body transform":"The person concludes the performance, bringing the bow and violin down and returning to the initial standing position"}
+]
+
+pose design:
+[
+    {"time": 0.0, "pose": "right hand is holding the bow, slightly above the waist, with the elbow bent. left hand is holding the violin, with the elbow slightly bent, and the violin is positioned below the chin."},
+    {"time": 1.0, "pose": "left hand moves the violin to the left shoulder, with the elbow raised, and the violin is tilted slightly. right hand maintains the bow's position, with the elbow straight."},
+    {"time": 1.5, "pose": "right hand moves the bow closer to the violin strings, ready to play. the waist is slightly bent to the left to accommodate the violin's position."},
+    {"time": 2.0, "pose": "left hand is stable on the violin, with the elbow still raised. right hand moves the bow smoothly across the strings, with the elbow moving back and forth."},
+    {"time": 2.5, "pose": "right hand continues the bowing motion, with a smooth and flowing movement. the waist straightens slightly as the right arm extends."},
+    {"time": 3.0, "pose": "left hand might tilt slightly or move the fingers up and down the fingerboard to change notes or strings. right hand maintains the bowing motion."},
+    {"time": 3.5, "pose": "right hand continues the smooth and expressive bowing, with the elbow moving gracefully. the waist might shift slightly to the right to balance the movement."},
+    {"time": 4.0, "pose": "left hand adjusts the violin's position slightly, ensuring a comfortable hold. right hand moves the bow to a new starting position, ready for the next set of notes."},
+    {"time": 4.5, "pose": "right hand prepares for the next bowing motion, with a slight pause. the waist is stable, providing a solid foundation for the upper body movements."},
+    {"time": 5.0, "pose": "both hands work in coordination, with the left hand steady on the violin and the right hand moving the bow, creating a harmonious and expressive performance."}
+]
+
